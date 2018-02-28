@@ -1,0 +1,256 @@
+= Ethereum Tutorial (Cotidiano)
+Paulo Jerônimo <paulojeronimo@gmail.com>, {localdatetime}
+:icons: font
+:toc:
+
+== Part 1 (February 28: 12 min) - Blockchain concepts revision (in a visual way)
+
+Blockchain demo (using https://anders.com/blockchain/). My Brazilian Portuguese documentation about this project: https://blockchain4devs.github.io/blockchain-demo/docs/pt-br/[Blockchain: Uma visualização gráfica].
+
+== Part 2 (February 28: 48 min) - Using geth
+
+Shell 1
+
+----
+$ tmux
+$ git clone https://github.com/paulojeronimo/ethereum-tutorial-cotidiano ethereum-tutorial
+$ cd ethereum-tutorial
+----
+
+----
+$ mkdir tmp/
+----
+
+
+[NOTE]
+====
+Geth installation https://geth.ethereum.org/[geth]:
+
+macOS:
+----
+$ brew install geth
+----
+
+Arch Linux:
+----
+$ sudo pacman -S geth
+----
+====
+
+----
+$ mkdir -p tmp/node1
+$ cd tmp
+$ cat ../genesis.json
+$ geth --datadir node1 init ../genesis.json
+$ tree node1
+$ geth --datadir node1 console 2> node1.log
+> admin.nodeInfo
+> eth.blockNumber
+> personal.newAccount()
+----
+
+Shell 2
+
+----
+$ geth attach node1/geth.ipc
+> admin.nodeInfo
+> eth.blockNumber
+----
+
+Shell 1
+
+----
+> miner.start(1)
+> eth.mining
+> eth.blockNumber
+> eth.blockNumber
+> eth.getBlock(eth.blockNumber).miner
+----
+
+Shell 2
+
+----
+> eth.blockNumber
+> exit
+----
+
+Shell 1
+
+----
+> exit
+$ geth --datadir node1 --rpc --rpcapi personal,db,eth,net,web3 --rpccorsdomain http://localhost:8000 console 2> node1.log
+> eth.blockNumber
+> miner.start(1)
+> eth.blockNumber
+----
+
+Shell 2
+
+----
+$ git clone https://github.com/etherparty/explorer
+$ (cd explorer && npm start &> ../explorer.log) &
+$ tail -f explorer.log
+<Ctrl+C>
+----
+
+Browser: http://localhost:8000
+
+----
+$ geth --datadir node2 init ../genesis.json
+$ geth --datadir node2/ console 2> node2.log
+Fatal: Error starting protocol stack: listen udp :30303: bind: address already in use
+$ geth --datadir node2/ console 2> node2.log --port 30304
+> admin.nodeInfo
+> exit
+----
+
+Shell 1
+
+----
+> exit
+$ geth --datadir node1 --rpc --rpcapi personal,db,eth,net,web3 --rpccorsdomain http://localhost:8000 --nodiscover --networkid 1234 console 2> node1.log
+> admin.nodeInfo.enode
+> admin.nodeInfo.protocols.eth.network
+----
+
+Shell 2
+
+----
+$ geth --datadir node2/ console --port 30304 --nodiscover --networkid 1234 2> node2.log
+> admin.nodeInfo.enode
+"enode://b45c61..."
+----
+
+Shell 1
+
+----
+> admin.peers
+> admin.addPeer("enode://b45c61...")
+> admin.peers
+> admin.peers[0].id
+"b45c61..."
+----
+
+Shell 2
+
+----
+> admin.peers
+> admin.peers[0].id
+"b1b3f1..."
+----
+
+Shell 1
+
+----
+> admin.nodeInfo.id
+"b1b3f1..."
+> eth.blockNumber
+0
+> miner.start(1)
+> eth.blockNumber
+2
+----
+
+Shell 2
+
+----
+> eth.blockNumber
+0
+> eth.syncing
+{
+  currentBlock: 0,
+  highestBlock: 83,
+  knownStates: 7,
+  pulledStates: 7,
+  startingBlock: 0
+}
+----
+
+WARNING: something was wrong at this point (node2.log was generating synchronization errors, so ... let's restart everything (excluding the block explorer)!
+
+Shell 1
+
+----
+> exit
+$ rm -rf node1*
+----
+
+Shell 2
+
+----
+> exit
+$ rm -rf node2*
+$ 
+----
+
+Shell 1
+
+-----
+$ geth --datadir node1 init ../genesis.json
+$ geth --datadir node1 --rpc --rpcapi personal,db,eth,net,web3 --rpccorsdomain http://localhost:8000 --nodiscover --networkid 1234 console 2> node1.log
+> personal.newAccount()
+> admin.nodeInfo.enode
+"enode://b1b3f1..."
+-----
+
+Shell 2
+
+----
+$ geth --datadir node2 init ../genesis.json
+$ geth --datadir node2 --rpc --rpcapi personal,db,eth,net,web3 --rpccorsdomain http://localhost:8000 --nodiscover --networkid 1234 --port 30304 console 2> node2.log
+> personal.newAccount()
+> admin.peers
+[]
+> admin.addPeer("enode://b1b3f1...")
+----
+
+Shell 1
+
+----
+> admin.peers
+> miner.start(1)
+> eth.blockNumber
+----
+
+Shell 2
+
+----
+> eth.blockNumber
+> miner.start(1)
+> eth.getBlock(eth.blockNumber).miner
+"0x6546b634c3dc6fda187af7cfd93a2b013baea862"
+> eth.getBlock(eth.blockNumber).miner
+"0xbb8b9b883e59dc48ed907785f8e27c0246b7e6a7"
+----
+
+Shell 1
+
+----
+> eth.getBalance(eth.getBlock(eth.blockNumber).miner)
+1.60984375e+21
+> eth.getBalance(eth.getBlock(eth.blockNumber).miner)
+665937500000000000000
+----
+
+== Part 3 (March 7: 40 min) - Solidity + browser-solidity and geth
+
+Are you in a hurry? See this:
+
+* https://www.youtube.com/watch?v=btjciT4ULKY[3 Compile and run your first smart contract against local private node - Ethereum from scratch]
+* https://www.youtube.com/watch?v=zjFmck3jvuw[4 How to invoke your first smart contract from the geth console (ABI) - Ethereum from scratch]
+* https://www.youtube.com/watch?v=rMulB-d8Hzc[6 Ethereum Gas, price, limit explained (demo) - Ethereum from scratch]
+
+== Part 4 (March 7: 50 min) - Solidity + web3j
+
+Are you in a hurry? See this:
+
+* https://www.youtube.com/watch?v=nXh_THBKvYo[Ethereum e Java: How to?]
+* https://www.youtube.com/watch?v=MqMIbz8A4d8[Conor Svensson - web3j - Ethereum London]
+
+I will present a Java + web3j version of the "voting app" presented by https://www.youtube.com/channel/UCWN3xxRkmTPmbKwht9FuE5A[Siraj Raval] in his video https://www.youtube.com/watch?v=gSQXq2_j-mw["A Guide to Building Your First Decentralized Application"].
+
+== Part 5 (Bonus - in my YouTube channel) - Writing a complete Java + Ethereum application from scratch
+
+*The cake cherry.*
+
+Available soon (*next Wednesday: March 7*) on https://github.com/paulojeronimo[my GitHub account] and on https://youtube.com/paulojeronimo74[my YouTube channel].
